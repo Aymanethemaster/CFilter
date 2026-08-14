@@ -10,6 +10,18 @@ A fast, lightweight, and interactive command-line image processing studio writte
 
 ---
 
+## About The Project
+
+**CFilter** is an open-source, minimalist image processor built for developers, students, and command-line enthusiasts who want fast, bloat-free image manipulations without the overhead of heavy desktop software.
+
+### Why CFilter?
+* **Zero Runtime Dependencies**: Unlike Python or Electron-based tools, CFilter is compiled into a single, standalone native binary (~350 KB) that runs instantly without installing runtimes, packages, or dynamic link libraries (DLLs).
+* **Minimalist Ergonomics**: Operates right inside your terminal with clean frame-by-frame screen refreshes, drag-and-drop file inputs, and interactive filter chaining.
+* **Direct Hardware-Level Performance**: Written in pure C99 with `-O3` compiler optimization, direct contiguous memory strides, fixed-point bit-shift math, and edge-clamped $3\times3$ spatial convolution kernels.
+* **Format Flexibility**: Built-in support for reading and exporting to any popular raster format (**PNG, JPEG, BMP, TGA**) with automatic extension detection and full alpha channel protection.
+
+---
+
 ## Download Pre-Built Executables (Releases)
 
 You do **not** need to install C compilers or build tools to use this application! Ready-to-run standalone binaries are provided for every major platform:
