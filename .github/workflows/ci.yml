@@ -1,0 +1,64 @@
+name: CI Build & Test
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    name: Build & Test on ${{ matrix.os }} with ${{ matrix.compiler }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            compiler: gcc
+            target: cfilter
+          - os: ubuntu-latest
+            compiler: clang
+            target: cfilter
+          - os: macos-latest
+            compiler: clang
+            target: cfilter
+          - os: windows-latest
+            compiler: gcc
+            target: cfilter.exe
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Compile (POSIX)
+        if: runner.os != 'Windows'
+        run: |
+          ${{ matrix.compiler }} -Wall -Wextra -std=c99 -O3 -Iinclude src/main.c src/image.c src/filters.c -o ${{ matrix.target }} -lm
+
+      - name: Run Test Operations (POSIX)
+        if: runner.os != 'Windows'
+        run: |
+          ./${{ matrix.target }} assets/sample.bmp out.png grayscale
+          ./${{ matrix.target }} assets/sample.bmp out.bmp sepia
+          ./${{ matrix.target }} assets/sample.bmp out.jpg brightness 40
+          ./${{ matrix.target }} assets/sample.bmp out.png rotate 90
+          ./${{ matrix.target }} assets/sample.bmp out.png sharpen
+          ./${{ matrix.target }} assets/sample.bmp out.png edge
+          ./${{ matrix.target }} assets/sample.bmp out.png blur
+
+      - name: Compile (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          gcc -Wall -Wextra -std=c99 -O3 -Iinclude src/main.c src/image.c src/filters.c -o ${{ matrix.target }} -lm
+
+      - name: Run Test Operations (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          .\${{ matrix.target }} assets\sample.bmp out.png grayscale
+          .\${{ matrix.target }} assets\sample.bmp out.bmp sepia
+          .\${{ matrix.target }} assets\sample.bmp out.jpg brightness 40
+          .\${{ matrix.target }} assets\sample.bmp out.png rotate 90
+          .\${{ matrix.target }} assets\sample.bmp out.png sharpen
+          .\${{ matrix.target }} assets\sample.bmp out.png edge
+          .\${{ matrix.target }} assets\sample.bmp out.png blur

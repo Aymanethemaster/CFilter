@@ -1,0 +1,49 @@
+# Compiled Binaries & Object Files
+*.exe
+*.out
+*.o
+*.obj
+*.so
+*.dylib
+*.dll
+*.pdb
+*.a
+*.lib
+*.exp
+*.ilk
+*.d
+
+# Build Output Directories
+build/
+bin/
+obj/
+dist/
+release-artifacts/
+
+# Test & Generated Output Images
+out.*
+output.*
+test_out.*
+out_*.*
+test_*.*
+*.tmp
+*.log
+
+# Keep sample assets in assets/
+!assets/
+
+# IDE & Editor Configurations / Caches
+.vscode/*
+!.vscode/c_cpp_properties.json
+.idea/
+.clangd/
+*.swp
+*~
+*.bak
+*.orig
+
+# Operating System Files
+.DS_Store
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/

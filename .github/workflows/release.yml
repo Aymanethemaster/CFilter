@@ -1,0 +1,70 @@
+name: Release Build
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    name: Build for ${{ matrix.os }} (${{ matrix.arch }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            arch: x64
+            artifact_name: cfilter-windows-x64.exe
+            cmd: gcc -Wall -Wextra -std=c99 -O3 -Iinclude src/main.c src/image.c src/filters.c -o cfilter-windows-x64.exe -lm
+          - os: ubuntu-latest
+            arch: x64
+            artifact_name: cfilter-linux-x64
+            cmd: gcc -Wall -Wextra -std=c99 -O3 -Iinclude src/main.c src/image.c src/filters.c -o cfilter-linux-x64 -lm
+          - os: macos-latest
+            arch: arm64
+            artifact_name: cfilter-macos-arm64
+            cmd: clang -Wall -Wextra -std=c99 -O3 -Iinclude src/main.c src/image.c src/filters.c -o cfilter-macos-arm64 -lm
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build Standalone Executable
+        run: ${{ matrix.cmd }}
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_name }}
+
+  publish-release:
+    needs: build-release
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+
+      - name: Flatten Artifacts Directory
+        run: |
+          mkdir -p dist
+          find release-artifacts -type f -exec cp {} dist/ \;
+          ls -la dist/
+
+      - name: Publish Release with Assets
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: dist/*
+          generate_release_notes: true
