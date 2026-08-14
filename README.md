@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)]()
 [![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen.svg)]()
-[![GitHub Releases](https://img.shields.io/github/v/release/AimanMokhtari/CFilter?include_prereleases&color=brightgreen&label=Release)](https://github.com/AimanMokhtari/CFilter/releases)
+[![GitHub Releases](https://img.shields.io/github/v/release/Aymanethemaster/CFilter?include_prereleases&color=brightgreen&label=Release)](https://github.com/Aymanethemaster/CFilter/releases)
 
 A fast, lightweight, and interactive command-line image processing studio written in pure C99. It features an intuitive terminal menu, drag-and-drop file loading, filter chaining, and multi-format export (**PNG, JPEG, BMP, TGA**) with zero external runtime dependencies.
 
@@ -14,7 +14,7 @@ A fast, lightweight, and interactive command-line image processing studio writte
 
 You do **not** need to install C compilers or build tools to use this application! Ready-to-run standalone binaries are provided for every major platform:
 
-**[Download the Latest Release on GitHub](https://github.com/AimanMokhtari/CFilter/releases/latest)**
+**[Download the Latest Release on GitHub](https://github.com/Aymanethemaster/CFilter/releases/latest)**
 
 | Platform | Binary Name | How to Run |
 | :--- | :--- | :--- |
