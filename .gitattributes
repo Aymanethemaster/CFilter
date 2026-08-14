@@ -1,6 +1,7 @@
-# Treat all header files as pure C
+# Enforce C language detection for all header files
 *.h linguist-language=C
+include/*.h linguist-language=C
 
-# Mark third-party STB libraries as vendored
+# Mark third-party libraries as vendored
 include/stb_image.h linguist-vendored
 include/stb_image_write.h linguist-vendored
