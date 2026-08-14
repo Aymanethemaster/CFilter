@@ -36,6 +36,45 @@ You do **not** need to install C compilers or build tools to use this applicatio
 
 ---
 
+## Building from Source
+
+If you prefer to compile from source or want to modify the algorithms:
+
+### Prerequisites
+- Any C99-compliant compiler (`gcc`, `clang`, or MSVC)
+- *(Optional)* `make` / `mingw32-make`
+
+### Option 1: Using Make (Recommended)
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/Aymanethemaster/CFilter.git
+cd CFilter
+
+# 2. Build optimized executable
+make          # On Linux / macOS
+# OR
+mingw32-make  # On Windows (MinGW / MSYS2)
+
+# 3. Run automated tests
+make test     # (or mingw32-make test)
+```
+
+### Option 2: Single Command Direct Compilation (No Make required)
+
+```bash
+# Windows (PowerShell / Command Prompt)
+gcc -Wall -Wextra -std=c99 -O3 -Iinclude src/main.c src/image.c src/filters.c -o cfilter.exe -lm
+
+# Linux
+gcc -Wall -Wextra -std=c99 -O3 -Iinclude src/main.c src/image.c src/filters.c -o cfilter -lm
+
+# macOS
+clang -Wall -Wextra -std=c99 -O3 -Iinclude src/main.c src/image.c src/filters.c -o cfilter -lm
+```
+
+---
+
 ## Features
 
 - **Simple Interactive Menu**: Screen-by-screen frame navigation with drag-and-drop file loading.
