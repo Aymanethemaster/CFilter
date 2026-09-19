@@ -25,7 +25,9 @@ out.*
 output.*
 test_out.*
 out_*.*
-test_*.*
+tests/fixture.bmp
+tests/generate_fixture
+tests/test_filters
 *.tmp
 *.log
 

@@ -1,9 +1,21 @@
-CC = gcc
-CFLAGS = -Wall -Wextra -std=c99 -O3 -Iinclude
-TARGET = cfilter.exe
+CC ?= gcc
+CFLAGS ?= -Wall -Wextra -std=c99 -O3 -Iinclude
+
+# Executable/file suffix (".exe" on Windows, empty elsewhere)
+ifeq ($(OS),Windows_NT)
+EXE := .exe
+else
+EXE :=
+endif
+
+TARGET = cfilter$(EXE)
 SRCS = src/main.c src/image.c src/filters.c
 OBJS = $(SRCS:.c=.o)
 INCLUDES = include/image.h include/filters.h include/stb_image.h include/stb_image_write.h
+
+FIXTURE_GEN = tests/generate_fixture$(EXE)
+TEST_RUNNER = tests/test_filters$(EXE)
+TEST_SRCS = tests/test_filters.c src/image.c src/filters.c
 
 all: $(TARGET)
 
@@ -16,18 +28,22 @@ $(TARGET): $(OBJS)
 debug: CFLAGS = -Wall -Wextra -std=c99 -g -DDEBUG -Iinclude
 debug: $(TARGET)
 
+# Deterministic test fixture, generated on the fly (BMP round-trip self-verified)
+tests/fixture.bmp: tests/generate_fixture.c tests/fixture_pixels.h
+	$(CC) $(CFLAGS) tests/generate_fixture.c -o $(FIXTURE_GEN) -lm
+	$(FIXTURE_GEN) tests/fixture.bmp
+
+$(TEST_RUNNER): $(TEST_SRCS) $(INCLUDES)
+	$(CC) $(CFLAGS) $(TEST_SRCS) -o $(TEST_RUNNER) -lm
+
+test: $(TARGET) $(TEST_RUNNER) tests/fixture.bmp
+	$(TEST_RUNNER) tests/fixture.bmp ./$(TARGET)
+
 clean:
-	del /Q $(TARGET) src\*.o out.* test_out.* 2>nul || rm -f $(TARGET) src/*.o out.* test_out.*
+ifeq ($(OS),Windows_NT)
+	-del /Q $(TARGET) src\*.o $(FIXTURE_GEN) $(TEST_RUNNER) tests\fixture.bmp tmp_out.* 2>nul
+else
+	rm -f $(TARGET) src/*.o $(FIXTURE_GEN) $(TEST_RUNNER) tests/fixture.bmp tmp_out.*
+endif
 
-test: $(TARGET)
-	@echo Running automated test suite...
-	.\$(TARGET) assets/sample.bmp out.png grayscale
-	.\$(TARGET) assets/sample.bmp out.bmp sepia
-	.\$(TARGET) assets/sample.bmp out.jpg brightness 40
-	.\$(TARGET) assets/sample.bmp out.png rotate 90
-	.\$(TARGET) assets/sample.bmp out.png sharpen
-	.\$(TARGET) assets/sample.bmp out.png edge
-	.\$(TARGET) assets/sample.bmp out.png blur
-	@echo All tests executed successfully!
-
-.PHONY: all debug clean test
+.PHONY: all debug test clean
