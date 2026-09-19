@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    name: Build & Test on ${{ matrix.os }} with ${{ matrix.compiler }}
+    name: Build & Test (${{ matrix.os }}, ${{ matrix.compiler }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -29,36 +29,42 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v4.3.0
 
-      - name: Compile (POSIX)
-        if: runner.os != 'Windows'
+      - name: Compile Application
+        shell: bash
         run: |
           ${{ matrix.compiler }} -Wall -Wextra -std=c99 -O3 -Iinclude src/main.c src/image.c src/filters.c -o ${{ matrix.target }} -lm
 
-      - name: Run Test Operations (POSIX)
-        if: runner.os != 'Windows'
+      - name: Generate Test Fixture
+        shell: bash
         run: |
-          ./${{ matrix.target }} assets/sample.bmp out.png grayscale
-          ./${{ matrix.target }} assets/sample.bmp out.bmp sepia
-          ./${{ matrix.target }} assets/sample.bmp out.jpg brightness 40
-          ./${{ matrix.target }} assets/sample.bmp out.png rotate 90
-          ./${{ matrix.target }} assets/sample.bmp out.png sharpen
-          ./${{ matrix.target }} assets/sample.bmp out.png edge
-          ./${{ matrix.target }} assets/sample.bmp out.png blur
+          ${{ matrix.compiler }} -Wall -Wextra -std=c99 -O3 -Iinclude tests/generate_fixture.c -o tests/generate_fixture -lm
+          ./tests/generate_fixture tests/fixture.bmp
 
-      - name: Compile (Windows)
-        if: runner.os == 'Windows'
+      - name: Compile Test Runner
+        shell: bash
         run: |
-          gcc -Wall -Wextra -std=c99 -O3 -Iinclude src/main.c src/image.c src/filters.c -o ${{ matrix.target }} -lm
+          ${{ matrix.compiler }} -Wall -Wextra -std=c99 -O3 -Iinclude tests/test_filters.c src/image.c src/filters.c -o tests/test_filters -lm
 
-      - name: Run Test Operations (Windows)
-        if: runner.os == 'Windows'
+      - name: Run Tests (unit + CLI integration)
+        shell: bash
+        run: ./tests/test_filters tests/fixture.bmp ./${{ matrix.target }}
+
+  sanitizer:
+    name: ASan/UBSan (Ubuntu, gcc)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v4.3.0
+
+      - name: Build with Sanitizers
         run: |
-          .\${{ matrix.target }} assets\sample.bmp out.png grayscale
-          .\${{ matrix.target }} assets\sample.bmp out.bmp sepia
-          .\${{ matrix.target }} assets\sample.bmp out.jpg brightness 40
-          .\${{ matrix.target }} assets\sample.bmp out.png rotate 90
-          .\${{ matrix.target }} assets\sample.bmp out.png sharpen
-          .\${{ matrix.target }} assets\sample.bmp out.png edge
-          .\${{ matrix.target }} assets\sample.bmp out.png blur
+          gcc -Wall -Wextra -std=c99 -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -Iinclude src/main.c src/image.c src/filters.c -o cfilter-asan -lm
+          gcc -Wall -Wextra -std=c99 -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -Iinclude tests/generate_fixture.c -o tests/generate_fixture-asan -lm
+          gcc -Wall -Wextra -std=c99 -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -Iinclude tests/test_filters.c src/image.c src/filters.c -o tests/test_filters-asan -lm
+
+      - name: Run Tests Under Sanitizers
+        run: |
+          ./tests/generate_fixture-asan tests/fixture.bmp
+          ASAN_OPTIONS=detect_leaks=1 ./tests/test_filters-asan tests/fixture.bmp ./cfilter-asan
