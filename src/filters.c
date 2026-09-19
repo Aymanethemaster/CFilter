@@ -8,9 +8,9 @@
 void apply_grayscale(Image *img) {
     if (!img || !img->data || img->channels < 3) return;
 
-    int num_pixels = img->width * img->height;
-    for (int i = 0; i < num_pixels; i++) {
-        unsigned char *px = &img->data[i * img->channels];
+    size_t num_pixels = (size_t)img->width * (size_t)img->height;
+    for (size_t i = 0; i < num_pixels; i++) {
+        unsigned char *px = &img->data[i * (size_t)img->channels];
         unsigned char r = px[0];
         unsigned char g = px[1];
         unsigned char b = px[2];
@@ -30,10 +30,10 @@ void apply_invert(Image *img) {
     if (!img || !img->data) return;
 
     int color_ch = get_color_channels(img);
-    int num_pixels = img->width * img->height;
+    size_t num_pixels = (size_t)img->width * (size_t)img->height;
 
-    for (int i = 0; i < num_pixels; i++) {
-        unsigned char *px = &img->data[i * img->channels];
+    for (size_t i = 0; i < num_pixels; i++) {
+        unsigned char *px = &img->data[i * (size_t)img->channels];
         for (int c = 0; c < color_ch; c++) {
             px[c] = 255 - px[c];
         }
@@ -45,10 +45,10 @@ void apply_brightness(Image *img, int amount) {
     if (!img || !img->data) return;
 
     int color_ch = get_color_channels(img);
-    int num_pixels = img->width * img->height;
+    size_t num_pixels = (size_t)img->width * (size_t)img->height;
 
-    for (int i = 0; i < num_pixels; i++) {
-        unsigned char *px = &img->data[i * img->channels];
+    for (size_t i = 0; i < num_pixels; i++) {
+        unsigned char *px = &img->data[i * (size_t)img->channels];
         for (int c = 0; c < color_ch; c++) {
             px[c] = clamp_u8((int)px[c] + amount);
         }
@@ -63,10 +63,10 @@ void apply_contrast(Image *img, int contrast) {
     float factor = (259.0f * (contrast + 255.0f)) / (255.0f * (259.0f - contrast));
 
     int color_ch = get_color_channels(img);
-    int num_pixels = img->width * img->height;
+    size_t num_pixels = (size_t)img->width * (size_t)img->height;
 
-    for (int i = 0; i < num_pixels; i++) {
-        unsigned char *px = &img->data[i * img->channels];
+    for (size_t i = 0; i < num_pixels; i++) {
+        unsigned char *px = &img->data[i * (size_t)img->channels];
         for (int c = 0; c < color_ch; c++) {
             int new_val = (int)(factor * ((int)px[c] - 128) + 128);
             px[c] = clamp_u8(new_val);
@@ -78,9 +78,9 @@ void apply_contrast(Image *img, int contrast) {
 void apply_sepia(Image *img) {
     if (!img || !img->data || img->channels < 3) return;
 
-    int num_pixels = img->width * img->height;
-    for (int i = 0; i < num_pixels; i++) {
-        unsigned char *px = &img->data[i * img->channels];
+    size_t num_pixels = (size_t)img->width * (size_t)img->height;
+    for (size_t i = 0; i < num_pixels; i++) {
+        unsigned char *px = &img->data[i * (size_t)img->channels];
         int r = px[0];
         int g = px[1];
         int b = px[2];
@@ -101,8 +101,8 @@ void apply_flip_horizontal(Image *img) {
 
     for (int y = 0; y < img->height; y++) {
         for (int x = 0; x < img->width / 2; x++) {
-            int left_idx = (y * img->width + x) * img->channels;
-            int right_idx = (y * img->width + (img->width - 1 - x)) * img->channels;
+            size_t left_idx = ((size_t)y * (size_t)img->width + (size_t)x) * (size_t)img->channels;
+            size_t right_idx = ((size_t)y * (size_t)img->width + (size_t)(img->width - 1 - x)) * (size_t)img->channels;
 
             for (int c = 0; c < img->channels; c++) {
                 unsigned char temp = img->data[left_idx + c];
@@ -117,7 +117,7 @@ void apply_flip_horizontal(Image *img) {
 void apply_flip_vertical(Image *img) {
     if (!img || !img->data) return;
 
-    int row_bytes = img->width * img->channels;
+    size_t row_bytes = (size_t)img->width * (size_t)img->channels;
     unsigned char *temp_row = (unsigned char *)malloc(row_bytes);
     if (!temp_row) {
         fprintf(stderr, "Error: Memory allocation failed for vertical flip.\n");
@@ -125,8 +125,8 @@ void apply_flip_vertical(Image *img) {
     }
 
     for (int y = 0; y < img->height / 2; y++) {
-        int top_offset = y * row_bytes;
-        int bottom_offset = (img->height - 1 - y) * row_bytes;
+        size_t top_offset = (size_t)y * row_bytes;
+        size_t bottom_offset = (size_t)(img->height - 1 - y) * row_bytes;
 
         memcpy(temp_row, &img->data[top_offset], row_bytes);
         memcpy(&img->data[top_offset], &img->data[bottom_offset], row_bytes);
@@ -150,7 +150,7 @@ int apply_rotate(Image *img, int degrees) {
 
     int new_width = (degrees == 180) ? img->width : img->height;
     int new_height = (degrees == 180) ? img->height : img->width;
-    size_t total_bytes = (size_t)new_width * new_height * img->channels;
+    size_t total_bytes = (size_t)new_width * (size_t)new_height * (size_t)img->channels;
 
     unsigned char *new_data = (unsigned char *)malloc(total_bytes);
     if (!new_data) {
@@ -160,7 +160,7 @@ int apply_rotate(Image *img, int degrees) {
 
     for (int y = 0; y < img->height; y++) {
         for (int x = 0; x < img->width; x++) {
-            int src_idx = (y * img->width + x) * img->channels;
+            size_t src_idx = ((size_t)y * (size_t)img->width + (size_t)x) * (size_t)img->channels;
             int dest_x = 0;
             int dest_y = 0;
 
@@ -175,8 +175,8 @@ int apply_rotate(Image *img, int degrees) {
                 dest_y = img->width - 1 - x;
             }
 
-            int dest_idx = (dest_y * new_width + dest_x) * img->channels;
-            memcpy(&new_data[dest_idx], &img->data[src_idx], img->channels);
+            size_t dest_idx = ((size_t)dest_y * (size_t)new_width + (size_t)dest_x) * (size_t)img->channels;
+            memcpy(&new_data[dest_idx], &img->data[src_idx], (size_t)img->channels);
         }
     }
 
@@ -191,7 +191,7 @@ int apply_rotate(Image *img, int degrees) {
 static void apply_convolution_3x3(Image *img, const float kernel[3][3], float factor, float bias) {
     if (!img || !img->data) return;
 
-    size_t size = (size_t)img->width * img->height * img->channels;
+    size_t size = (size_t)img->width * (size_t)img->height * (size_t)img->channels;
     unsigned char *copy = (unsigned char *)malloc(size);
     if (!copy) {
         fprintf(stderr, "Error: Memory allocation failed for convolution operation.\n");
@@ -209,11 +209,11 @@ static void apply_convolution_3x3(Image *img, const float kernel[3][3], float fa
                     int py = clamp_int(y + ky, 0, img->height - 1);
                     for (int kx = -1; kx <= 1; kx++) {
                         int px_coord = clamp_int(x + kx, 0, img->width - 1);
-                        int idx = (py * img->width + px_coord) * img->channels + c;
+                        size_t idx = ((size_t)py * (size_t)img->width + (size_t)px_coord) * (size_t)img->channels + (size_t)c;
                         sum += copy[idx] * kernel[ky + 1][kx + 1];
                     }
                 }
-                int dest_idx = (y * img->width + x) * img->channels + c;
+                size_t dest_idx = ((size_t)y * (size_t)img->width + (size_t)x) * (size_t)img->channels + (size_t)c;
                 int final_val = (int)(sum * factor + bias);
                 img->data[dest_idx] = clamp_u8(final_val);
             }

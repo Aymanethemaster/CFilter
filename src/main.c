@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <errno.h>
 
 #include "../include/image.h"
 #include "../include/filters.h"
@@ -62,6 +63,33 @@ static void print_banner(void) {
     printf("========================================================\n");
 }
 
+// Parse a base-10 integer strictly: the whole string must be a valid number.
+// Returns 1 and stores the value in *out on success, 0 otherwise.
+static int parse_int_strict(const char *s, int *out) {
+    if (!s || !out) return 0;
+    while (isspace((unsigned char)*s)) s++;
+    if (*s == '\0') return 0;
+    errno = 0;
+    char *end = NULL;
+    long v = strtol(s, &end, 10);
+    if (s == end || errno == ERANGE || v < -2147483647L - 1 || v > 2147483647L) return 0;
+    while (isspace((unsigned char)*end)) end++;
+    if (*end != '\0') return 0;
+    *out = (int)v;
+    return 1;
+}
+
+// Append a tag to the filter history chain ("A -> B -> C").
+static void history_append(char *history, size_t hist_size, const char *tag) {
+    if (!history || !tag || hist_size == 0) return;
+    size_t used = strlen(history);
+    if (used > 0) {
+        strncat(history, " -> ", hist_size - used - 1);
+        used = strlen(history);
+    }
+    strncat(history, tag, hist_size - used - 1);
+}
+
 static void print_status_header(const char *filename, const Image *img, const char *history, const char *status_msg) {
     print_banner();
 
@@ -112,37 +140,36 @@ static int apply_chosen_filter(Image *img, int choice, char *history, size_t his
         case 1:
             apply_grayscale(img);
             snprintf(status_msg, stat_size, "Applied Grayscale filter.");
-            if (strlen(history) > 0) strncat(history, " -> Grayscale", hist_size - strlen(history) - 1);
-            else strncpy(history, "Grayscale", hist_size - 1);
+            history_append(history, hist_size, "Grayscale");
             break;
         case 2:
             apply_invert(img);
             snprintf(status_msg, stat_size, "Applied Invert Colors.");
-            if (strlen(history) > 0) strncat(history, " -> Invert", hist_size - strlen(history) - 1);
-            else strncpy(history, "Invert", hist_size - 1);
+            history_append(history, hist_size, "Invert");
             break;
         case 3:
             apply_sepia(img);
             snprintf(status_msg, stat_size, "Applied Sepia Tone.");
-            if (strlen(history) > 0) strncat(history, " -> Sepia", hist_size - strlen(history) - 1);
-            else strncpy(history, "Sepia", hist_size - 1);
+            history_append(history, hist_size, "Sepia");
             break;
         case 4:
             apply_flip_horizontal(img);
             snprintf(status_msg, stat_size, "Applied Horizontal Flip.");
-            if (strlen(history) > 0) strncat(history, " -> Flip-H", hist_size - strlen(history) - 1);
-            else strncpy(history, "Flip-H", hist_size - 1);
+            history_append(history, hist_size, "Flip-H");
             break;
         case 5:
             apply_flip_vertical(img);
             snprintf(status_msg, stat_size, "Applied Vertical Flip.");
-            if (strlen(history) > 0) strncat(history, " -> Flip-V", hist_size - strlen(history) - 1);
-            else strncpy(history, "Flip-V", hist_size - 1);
+            history_append(history, hist_size, "Flip-V");
             break;
         case 6: {
             printf("Enter rotation angle (90, 180, or 270): ");
             if (!get_user_input(input_buf, sizeof(input_buf))) return 0;
-            int deg = atoi(input_buf);
+            int deg = 0;
+            if (!parse_int_strict(input_buf, &deg)) {
+                snprintf(status_msg, stat_size, "Invalid rotation angle '%s' (Must be 90, 180, or 270).", input_buf);
+                return 0;
+            }
             if (deg != 90 && deg != 180 && deg != 270) {
                 snprintf(status_msg, stat_size, "Invalid rotation angle '%s' (Must be 90, 180, or 270).", input_buf);
                 return 0;
@@ -151,19 +178,18 @@ static int apply_chosen_filter(Image *img, int choice, char *history, size_t his
                 snprintf(status_msg, stat_size, "Rotated %d degrees clockwise (%dx%d).", deg, img->width, img->height);
                 char tag[64];
                 snprintf(tag, sizeof(tag), "Rotate(%d deg)", deg);
-                if (strlen(history) > 0) {
-                    strncat(history, " -> ", hist_size - strlen(history) - 1);
-                    strncat(history, tag, hist_size - strlen(history) - 1);
-                } else {
-                    strncpy(history, tag, hist_size - 1);
-                }
+                history_append(history, hist_size, tag);
             }
             break;
         }
         case 7: {
             printf("Enter brightness change (-255 to +255, e.g. 50 or -30): ");
             if (!get_user_input(input_buf, sizeof(input_buf))) return 0;
-            int amount = atoi(input_buf);
+            int amount = 0;
+            if (!parse_int_strict(input_buf, &amount)) {
+                snprintf(status_msg, stat_size, "Invalid brightness value '%s'.", input_buf);
+                return 0;
+            }
             if (amount < -255 || amount > 255) {
                 snprintf(status_msg, stat_size, "Brightness value must be between -255 and +255.");
                 return 0;
@@ -172,18 +198,17 @@ static int apply_chosen_filter(Image *img, int choice, char *history, size_t his
             snprintf(status_msg, stat_size, "Applied Brightness (%+d).", amount);
             char tag[64];
             snprintf(tag, sizeof(tag), "Brightness(%+d)", amount);
-            if (strlen(history) > 0) {
-                strncat(history, " -> ", hist_size - strlen(history) - 1);
-                strncat(history, tag, hist_size - strlen(history) - 1);
-            } else {
-                strncpy(history, tag, hist_size - 1);
-            }
+            history_append(history, hist_size, tag);
             break;
         }
         case 8: {
             printf("Enter contrast change (-255 to +255, e.g. 40 or -20): ");
             if (!get_user_input(input_buf, sizeof(input_buf))) return 0;
-            int amount = atoi(input_buf);
+            int amount = 0;
+            if (!parse_int_strict(input_buf, &amount)) {
+                snprintf(status_msg, stat_size, "Invalid contrast value '%s'.", input_buf);
+                return 0;
+            }
             if (amount < -255 || amount > 255) {
                 snprintf(status_msg, stat_size, "Contrast value must be between -255 and +255.");
                 return 0;
@@ -192,31 +217,23 @@ static int apply_chosen_filter(Image *img, int choice, char *history, size_t his
             snprintf(status_msg, stat_size, "Applied Contrast (%+d).", amount);
             char tag[64];
             snprintf(tag, sizeof(tag), "Contrast(%+d)", amount);
-            if (strlen(history) > 0) {
-                strncat(history, " -> ", hist_size - strlen(history) - 1);
-                strncat(history, tag, hist_size - strlen(history) - 1);
-            } else {
-                strncpy(history, tag, hist_size - 1);
-            }
+            history_append(history, hist_size, tag);
             break;
         }
         case 9:
             apply_blur(img);
             snprintf(status_msg, stat_size, "Applied Box Blur.");
-            if (strlen(history) > 0) strncat(history, " -> Blur", hist_size - strlen(history) - 1);
-            else strncpy(history, "Blur", hist_size - 1);
+            history_append(history, hist_size, "Blur");
             break;
         case 10:
             apply_sharpen(img);
             snprintf(status_msg, stat_size, "Applied Sharpen filter.");
-            if (strlen(history) > 0) strncat(history, " -> Sharpen", hist_size - strlen(history) - 1);
-            else strncpy(history, "Sharpen", hist_size - 1);
+            history_append(history, hist_size, "Sharpen");
             break;
         case 11:
             apply_edge(img);
             snprintf(status_msg, stat_size, "Applied Edge Detection filter.");
-            if (strlen(history) > 0) strncat(history, " -> Edge", hist_size - strlen(history) - 1);
-            else strncpy(history, "Edge", hist_size - 1);
+            history_append(history, hist_size, "Edge");
             break;
         default:
             snprintf(status_msg, stat_size, "Invalid choice! Please select 0 to 11.");
@@ -304,14 +321,36 @@ static int run_cli_mode(int argc, char *argv[]) {
     else if (strcmp(operation, "flip") == 0 || strcmp(operation, "flip-h") == 0) apply_flip_horizontal(&img);
     else if (strcmp(operation, "flip-v") == 0) apply_flip_vertical(&img);
     else if (strcmp(operation, "rotate") == 0) {
-        int deg = (argc >= 5) ? atoi(argv[4]) : 90;
-        apply_rotate(&img, deg);
-    } else if (strcmp(operation, "brightness") == 0) {
-        int amt = (argc >= 5) ? atoi(argv[4]) : 0;
-        apply_brightness(&img, amt);
-    } else if (strcmp(operation, "contrast") == 0) {
-        int amt = (argc >= 5) ? atoi(argv[4]) : 0;
-        apply_contrast(&img, amt);
+        int deg = 90;
+        if (argc >= 5 && !parse_int_strict(argv[4], &deg)) {
+            fprintf(stderr, "Invalid rotation angle '%s' (must be 90, 180, or 270).\n", argv[4]);
+            free_image(&img);
+            return 1;
+        }
+        if (deg != 90 && deg != 180 && deg != 270) {
+            fprintf(stderr, "Invalid rotation angle %d (must be 90, 180, or 270).\n", deg);
+            free_image(&img);
+            return 1;
+        }
+        if (!apply_rotate(&img, deg)) {
+            free_image(&img);
+            return 1;
+        }
+    } else if (strcmp(operation, "brightness") == 0 || strcmp(operation, "contrast") == 0) {
+        int amt = 0;
+        if (argc >= 5 && !parse_int_strict(argv[4], &amt)) {
+            fprintf(stderr, "Invalid %s value '%s' (must be an integer from -255 to 255).\n",
+                    operation, argv[4]);
+            free_image(&img);
+            return 1;
+        }
+        if (amt < -255 || amt > 255) {
+            fprintf(stderr, "Invalid %s value %d (must be between -255 and +255).\n", operation, amt);
+            free_image(&img);
+            return 1;
+        }
+        if (operation[0] == 'b') apply_brightness(&img, amt);
+        else apply_contrast(&img, amt);
     } else if (strcmp(operation, "blur") == 0) apply_blur(&img);
     else if (strcmp(operation, "sharpen") == 0) apply_sharpen(&img);
     else if (strcmp(operation, "edge") == 0) apply_edge(&img);
@@ -321,7 +360,10 @@ static int run_cli_mode(int argc, char *argv[]) {
         return 1;
     }
 
-    save_image(output_path, &img);
+    if (!save_image(output_path, &img)) {
+        free_image(&img);
+        return 1;
+    }
     free_image(&img);
     return 0;
 }

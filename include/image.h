@@ -25,8 +25,13 @@ static inline int clamp_int(int val, int min_val, int max_val) {
     return val < min_val ? min_val : (val > max_val ? max_val : val);
 }
 
+// Load limits: guard against oversized / decompression-bomb images.
+#define IMAGE_MAX_DIM    65535
+#define IMAGE_MAX_PIXELS 268435456LL // 256 MP; ~= 1 GiB of RGBA data
+
 // Image lifecycle & I/O
 int load_image(const char *filename, Image *img);
+int load_image_ex(const char *filename, Image *img, int max_dim, long long max_pixels);
 int save_image(const char *filename, const Image *img);
 void free_image(Image *img);
 

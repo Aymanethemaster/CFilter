@@ -26,15 +26,29 @@ static int ends_with_case_insensitive(const char *str, const char *suffix) {
     return 1;
 }
 
-// Load an image from disk (returns 1 on success, 0 on failure)
-int load_image(const char *filename, Image *img) {
+// Load an image from disk, rejecting oversized images (returns 1 on success, 0 on failure)
+int load_image_ex(const char *filename, Image *img, int max_dim, long long max_pixels) {
     if (!filename || !img) return 0;
     img->data = stbi_load(filename, &img->width, &img->height, &img->channels, 0);
     if (!img->data) {
         fprintf(stderr, "Error loading image '%s': %s\n", filename, stbi_failure_reason());
         return 0;
     }
+    if (img->width > max_dim || img->height > max_dim ||
+        (long long)img->width * img->height > max_pixels) {
+        fprintf(stderr, "Error: image '%s' is too large (%dx%d pixels; limit is %dx%d, %lld pixels)\n",
+                filename, img->width, img->height, max_dim, max_dim, max_pixels);
+        stbi_image_free(img->data);
+        img->data = NULL;
+        img->width = img->height = img->channels = 0;
+        return 0;
+    }
     return 1;
+}
+
+// Load an image from disk with the default safety limits
+int load_image(const char *filename, Image *img) {
+    return load_image_ex(filename, img, IMAGE_MAX_DIM, IMAGE_MAX_PIXELS);
 }
 
 // Save image to disk with automatic format detection by extension
