@@ -8,6 +8,7 @@
 #include "../include/filters.h"
 
 #define MAX_PATH_LEN 1024
+#define CFILTER_VERSION "1.0.1"
 
 // Cross-platform screen clearing
 static void clear_screen(void) {
@@ -59,7 +60,7 @@ static int get_user_input(char *buffer, size_t size) {
 
 static void print_banner(void) {
     printf("========================================================\n");
-    printf("                 CFILTER - IMAGE STUDIO                 \n");
+    printf("            CFILTER - IMAGE STUDIO  v%-18s\n", CFILTER_VERSION);
     printf("========================================================\n");
 }
 
@@ -369,6 +370,12 @@ static int run_cli_mode(int argc, char *argv[]) {
 }
 
 int main(int argc, char *argv[]) {
+    // Version query
+    if (argc >= 2 && (strcmp(argv[1], "--version") == 0 || strcmp(argv[1], "-v") == 0)) {
+        printf("CFilter %s\n", CFILTER_VERSION);
+        return 0;
+    }
+
     // If command-line arguments are provided, run in non-interactive batch mode
     if (argc >= 4) {
         return run_cli_mode(argc, argv);
