@@ -1,11 +1,92 @@
-# CFilter - Interactive Image Studio
+# CFilter — Image Studio
 
-[![C99](https://img.shields.io/badge/Language-C99-blue.svg)](https://en.wikipedia.org/wiki/C99)
+[![CI](https://github.com/Aymanethemaster/CFilter/actions/workflows/ci.yml/badge.svg)](https://github.com/Aymanethemaster/CFilter/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)]()
-[![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen.svg)]()
-[![GitHub Releases](https://img.shields.io/github/v/release/Aymanethemaster/CFilter?include_prereleases&color=brightgreen&label=Release)](https://github.com/Aymanethemaster/CFilter/releases)
+[![Release](https://img.shields.io/github/v/release/Aymanethemaster/CFilter?include_prereleases&label=release)](https://github.com/Aymanethemaster/CFilter/releases)
 
+A fast, dependency-free command-line image processor in pure C99. Interactive terminal UI with filter chaining, plus a scriptable batch mode. Reads/writes **PNG, JPEG, BMP, TGA** and preserves alpha.
+
+## Install
+
+**Pre-built binaries** — no compiler needed: [Releases](https://github.com/Aymanethemaster/CFilter/releases/latest)
+
+| Platform | Binary |
+|---|---|
+| Windows (x64) | `cfilter-windows-x64.exe` |
+| Linux (x64) | `cfilter-linux-x64` |
+| macOS (Apple Silicon) | `cfilter-macos-arm64` |
+
+**Build from source** (needs `gcc` or `clang`):
+
+```bash
+git clone https://github.com/Aymanethemaster/CFilter.git
+cd CFilter
+make            # Windows: mingw32-make
+make test       # runs the test suite
+```
+
+Or compile directly:
+
+```bash
+gcc -Wall -Wextra -std=c99 -O3 -Iinclude src/main.c src/image.c src/filters.c -o cfilter -lm
+```
+
+## Usage
+
+**Interactive mode** — just run the binary:
+
+```bash
+./cfilter
+```
+
+1. Drag & drop an image (or type its path).
+2. Pick filters `1`–`11` — they chain in order.
+3. Choose `0` to export, pick a format (PNG/JPEG/BMP/TGA), name the file.
+
+**Batch / CLI mode** — one operation per call:
+
+```bash
+cfilter <input> <output> <operation> [value]
+
+cfilter photo.jpg out.png grayscale
+cfilter photo.jpg out.png rotate 90
+cfilter photo.jpg out.png brightness 40
+```
+
+Operations: `grayscale` `invert` `sepia` `flip-h` `flip-v` `rotate <90|180|270>` `brightness <-255..255>` `contrast <-255..255>` `blur` `sharpen` `edge`
+
+## Filters
+
+| # | Filter | Notes |
+|---|---|---|
+| 1 | Grayscale | perceptual luminance |
+| 2 | Invert | photo negative |
+| 3 | Sepia | vintage tone |
+| 4 / 5 | Flip H / V | mirror |
+| 6 | Rotate | 90 / 180 / 270° |
+| 7 / 8 | Brightness / Contrast | −255…+255 |
+| 9 / 10 / 11 | Blur / Sharpen / Edge | 3×3 convolution, edge-clamped |
+
+## Project layout
+
+```
+include/    image.h, filters.h  (+ vendored stb_image / stb_image_write)
+src/        main.c (UI + CLI), image.c (I/O), filters.c (algorithms)
+tests/      unit + CLI integration suite, auto-generated fixture
+assets/     sample.bmp
+```
+
+## Notes
+
+- **Alpha-safe**: the alpha channel is never modified by any filter.
+- **Self-contained**: builds into one binary; `stb_image`/`stb_image_write` are vendored (pinned, see `.clangd`).
+- **Tests**: `make test` runs exact pixel-level assertions and CLI exit-code checks; CI also runs ASan/UBSan on every push.
+
+## License
+
+[MIT](LICENSE)
+
+<!-- ======= legacy detail (kept for contributors) =======
 A fast, lightweight, and interactive command-line image processing studio written in pure C99. It features an intuitive terminal menu, drag-and-drop file loading, filter chaining, and multi-format export (**PNG, JPEG, BMP, TGA**) with zero external runtime dependencies.
 
 ---
@@ -276,7 +357,4 @@ CFilter/
 ```
 
 ---
-
-## License
-
-This project is open-source and available under the [MIT License](LICENSE).
+-->

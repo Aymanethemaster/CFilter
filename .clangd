@@ -1,2 +1,6 @@
 CompileFlags:
-  Add: [-Iinclude, -I../include]
+  Add: [-Iinclude, -I../include, -Itests]
+
+# Vendored libraries (include/stb_image.h v2.30, include/stb_image_write.h v1.16)
+# are tracked in git as-is so builds are reproducible without fetching anything.
+# Upstream: https://github.com/nothings/stb
